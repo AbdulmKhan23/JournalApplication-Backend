@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 
-from models import JournalRequest, JournalResponse
-from services import analyze_journal
+from backend.models import JournalRequest, JournalResponse
+from backend.services import analyze_journal
 
 app = FastAPI(
     title="AI Journal API"
