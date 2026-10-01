@@ -3,3 +3,6 @@ uvicorn
 python-dotenv
 google-genai
 pydantic
+slowapi
+
+slowapi
