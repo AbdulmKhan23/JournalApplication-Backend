@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 
 from backend.models import JournalRequest, JournalResponse
+from backend.services import GeminiUnavailable
 from backend.services import analyze_journal, TokenLimitExceeded
 from fastapi import FastAPI, HTTPException, Request
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -60,6 +61,12 @@ def analyze(request: Request, journal: JournalRequest):
             detail=str(exc),
         ) from exc
 
+    except GeminiUnavailable as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="AI analysis is temporarily unavailable. Please try again later.",
+            headers={"Retry-After": "30"},
+        ) from exc
     except Exception as e:
         raise HTTPException(
              status_code=500,
