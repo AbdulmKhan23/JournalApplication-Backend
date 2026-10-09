@@ -1,4 +1,6 @@
-from fastapi import FastAPI, HTTPException
+from datetime import date
+
+from fastapi import FastAPI, HTTPException, Query
 
 from backend.models import JournalRequest, JournalResponse
 from backend.services import GeminiUnavailable
@@ -7,6 +9,8 @@ from fastapi import FastAPI, HTTPException, Request
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+from backend.models import DailyQuoteResponse
+from backend.services import get_daily_quote
 
 
 limiter = Limiter(key_func=get_remote_address)
@@ -28,6 +32,20 @@ def home(request: Request):
         "message": "AI Journal API is running."
     }
 
+@app.get("/daily-quote", response_model=DailyQuoteResponse)
+@limiter.limit("30/minute")
+def daily_quote(
+    request: Request,
+    day: date = Query(alias="date"),
+):
+    try:
+        return get_daily_quote(day.isoformat())
+    except GeminiUnavailable as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Today's quote is temporarily unavailable.",
+            headers={"Retry-After": "30"},
+        ) from exc
 
 @app.post("/analyze", response_model=JournalResponse)
 @limiter.limit("5/minute")
