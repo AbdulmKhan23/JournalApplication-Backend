@@ -11,6 +11,11 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from backend.models import DailyQuoteResponse
 from backend.services import get_daily_quote
+from backend.models import (
+    ReflectQuestionRequest,
+    ReflectQuestionResponse,
+)
+from backend.services import generate_reflection_question
 
 
 limiter = Limiter(key_func=get_remote_address)
@@ -44,6 +49,31 @@ def daily_quote(
         raise HTTPException(
             status_code=503,
             detail="Today's quote is temporarily unavailable.",
+            headers={"Retry-After": "30"},
+        ) from exc
+
+@app.post(
+    "/reflect-question",
+    response_model=ReflectQuestionResponse
+)
+@limiter.limit("10/minute")
+def reflect_question(
+    request: Request,
+    payload: ReflectQuestionRequest,
+):
+    try:
+        result = generate_reflection_question(
+            payload.excluded_questions
+        )
+
+        return ReflectQuestionResponse(
+            question=result["question"]
+        )
+
+    except GeminiUnavailable as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="A unique reflection question is temporarily unavailable.",
             headers={"Retry-After": "30"},
         ) from exc
 

@@ -5,4 +5,3 @@ google-genai
 pydantic
 slowapi
 
-slowapi
